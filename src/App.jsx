@@ -5,6 +5,7 @@ import UpdateTeam from "./pages/UpdateTeam";
 import ParticipantLogin from "./pages/ParticipantLogin";
 import ParticipantDashboard from "./pages/ParticipantDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import Leaderboard from "./pages/Leaderboard";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/admin/update-team" element={<UpdateTeam />} />
         <Route path="/participant" element={<ParticipantLogin />} />
         <Route path="/participant/dashboard" element={<ParticipantDashboard />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
       </Routes>
     </BrowserRouter>
   );

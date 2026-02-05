@@ -177,7 +177,8 @@
 
 import { useEffect, useState } from "react";
 import useContestTimer from "../hooks/useContestTimer";
-import { databases, DATABASE_ID, COLLECTION_TEAMS, COLLECTION_PROBLEMS } from "../lib/appwrite";
+import { databases, DATABASE_ID, COLLECTION_TEAMS, COLLECTION_PROBLEMS, COLLECTION_LEADERBOARD } from "../lib/appwrite";
+
 import CodeEditor from "../components/CodeEditor";
 import BackgroundWrapper from "../components/BackgroundWrapper";
 import NeoButton from "../components/NeoButton";
@@ -206,6 +207,7 @@ const EMPTY_TEAM = {
     submissions_used: 0,
     $id: null
 };
+
 
 export default function ParticipantDashboard() {
     const [team, setTeam] = useState(EMPTY_TEAM);
@@ -275,11 +277,29 @@ export default function ParticipantDashboard() {
 
     const normalize = (txt) =>
         (txt || "")
-            .replace(/\r\n/g, "\n")
+            .replace(/\r\n/g, "\n")      // Windows → Unix line endings
             .trim();
+
+    const tokenize = (txt) =>
+        normalize(txt)
+            .split(/\s+/)               // split on ANY whitespace
+            .filter(Boolean);           // remove empty
+
+    const outputsMatch = (user, expected) => {
+        const a = tokenize(user);
+        const b = tokenize(expected);
+
+        if (a.length !== b.length) return false;
+
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] !== b[i]) return false;
+        }
+        return true;
+    };
 
     const handleSubmit = async () => {
         console.log("🟡 Submit clicked");
+        if (team.solved) return alert("Problem already solved!");
 
         try {
             if (!isValid) return alert("Code contains unpurchased syntax!");
@@ -290,6 +310,7 @@ export default function ParticipantDashboard() {
 
             console.log("📤 Sending submission...");
             const hiddenInput = problem.test_case_input || "";
+
             const id = await createSubmission(code, language, hiddenInput);
 
             console.log("🆔 Submission ID:", id);
@@ -341,6 +362,11 @@ export default function ParticipantDashboard() {
                 return;
             }
 
+            const updated = { submissions_used: team.submissions_used + 1 };
+            await databases.updateDocument(DATABASE_ID, COLLECTION_TEAMS, String(team.team_id), updated);
+            setTeam(prev => ({ ...prev, ...updated }));
+            localStorage.setItem("teamData", JSON.stringify({ ...team, ...updated }));
+
             // ⏱ Calculate raw time taken
             const timerState = JSON.parse(localStorage.getItem("contest_timer_state"));
             const rawTimeTaken = Math.floor((Date.now() - timerState.startTime) / 1000);
@@ -353,20 +379,10 @@ export default function ParticipantDashboard() {
             console.log("⚡ Speed reduction:", speedReduction);
             console.log("🏁 Final recorded time:", finalTimeTaken);
 
-            // Save to DB
-            await databases.updateDocument(
-                DATABASE_ID,
-                COLLECTION_TEAMS,
-                String(team.team_id),
-                {
-                    solved: true,
-                    time_taken_sec: finalTimeTaken
-                }
-            );
 
             // Judge comparison
             // Judge comparison FIRST
-            if (userOutput === expectedOutput) {
+            if (outputsMatch(userOutput, expectedOutput)) {
                 alert("✅ Accepted\n\nOutput:\n" + userOutput);
 
                 const timerState = JSON.parse(localStorage.getItem("contest_timer_state")) || {};
@@ -384,6 +400,45 @@ export default function ParticipantDashboard() {
                     }
                 );
 
+                const submitTime = Date.now();
+
+                const existing = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTION_LEADERBOARD,
+                    [Query.equal("$id", String(team.team_id))]
+                );
+
+                if (existing.documents.length === 0) {
+                    // First solve
+                    await databases.createDocument(
+                        DATABASE_ID,
+                        COLLECTION_LEADERBOARD,
+                        String(team.team_id),
+                        {
+                            team_name: team.team_name,
+                            solved: true,
+                            time_taken_sec: finalTimeTaken,
+                            submitted_at: submitTime
+                        }
+                    );
+                } else {
+                    const oldTime = existing.documents[0].time_taken_sec;
+
+                    // Update only if better
+                    if (finalTimeTaken < oldTime) {
+                        await databases.updateDocument(
+                            DATABASE_ID,
+                            COLLECTION_LEADERBOARD,
+                            String(team.team_id),
+                            {
+                                time_taken_sec: finalTimeTaken,
+                                submitted_at: submitTime
+                            }
+                        );
+                    }
+                }
+
+
             } else {
                 alert(
                     "❌ Wrong Answer\n\nYour Output:" +
@@ -392,10 +447,7 @@ export default function ParticipantDashboard() {
             }
 
 
-            const updated = { submissions_used: team.submissions_used + 1 };
-            await databases.updateDocument(DATABASE_ID, COLLECTION_TEAMS, String(team.team_id), updated);
-            setTeam(prev => ({ ...prev, ...updated }));
-            localStorage.setItem("teamData", JSON.stringify({ ...team, ...updated }));
+
 
 
         } catch (err) {
