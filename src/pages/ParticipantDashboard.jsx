@@ -215,15 +215,23 @@ export default function ParticipantDashboard() {
     const [isValid, setIsValid] = useState(false);
     const [language, setLanguage] = useState("cpp");
     const [code, setCode] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAccepted, setIsAccepted] = useState(false);
+
 
 
     // Load cached data
     useEffect(() => {
         const t = localStorage.getItem("teamData");
         const p = localStorage.getItem("problemData");
-        if (t) setTeam(JSON.parse(t));
+        if (t) {
+            const parsed = JSON.parse(t);
+            setTeam(parsed);
+            if (parsed.solved) setIsAccepted(true);
+        }
         if (p) setProblem(JSON.parse(p));
     }, []);
+
 
     // Always fetch fresh problem (with hidden test cases)
     useEffect(() => {
@@ -299,6 +307,10 @@ export default function ParticipantDashboard() {
 
     const handleSubmit = async () => {
         console.log("🟡 Submit clicked");
+        if (isSubmitting || isAccepted) return;
+
+        setIsSubmitting(true);
+
         if (team.solved) return alert("Problem already solved!");
 
         try {
@@ -383,7 +395,11 @@ export default function ParticipantDashboard() {
             // Judge comparison
             // Judge comparison FIRST
             if (outputsMatch(userOutput, expectedOutput)) {
+
+                setIsAccepted(true);
+                localStorage.setItem("teamData", JSON.stringify({ ...team, solved: true }));
                 alert("✅ Accepted\n\nOutput:\n" + userOutput);
+
 
                 const timerState = JSON.parse(localStorage.getItem("contest_timer_state")) || {};
                 const rawTimeTaken = Math.floor((Date.now() - (timerState.startTime || Date.now())) / 1000);
@@ -444,6 +460,8 @@ export default function ParticipantDashboard() {
                     "❌ Wrong Answer\n\nYour Output:" +
                     userOutput
                 );
+                setIsSubmitting(false);
+
             }
 
 
@@ -453,6 +471,8 @@ export default function ParticipantDashboard() {
         } catch (err) {
             console.error("💥 Submission error:", err);
             alert("Submission failed. Check console.");
+            setIsSubmitting(false);
+
         }
     };
 
@@ -533,63 +553,65 @@ export default function ParticipantDashboard() {
                 ) : (
                     <div style={{ display: "flex", width: "100%", zIndex: 1, padding: "16px", gap: "16px" }}>
 
-                        {/* LEFT SIDE — Problem Description */}
+                        {/* LEFT SIDE — PROBLEM PORTAL */}
                         <div style={{
-                            width: "45%",
-                            backgroundColor: "rgba(22, 22, 24, 0.7)",
-                            backdropFilter: "blur(12px)",
-                            borderRadius: "12px",
+                            width: "48%",
+                            backgroundColor: "rgba(22, 22, 24, 0.75)",
+                            backdropFilter: "blur(14px)",
+                            borderRadius: "14px",
                             border: `1px solid ${COLORS.border}`,
-                            padding: "32px",
+                            padding: "36px",
                             display: "flex",
                             flexDirection: "column",
                             overflowY: "auto"
                         }}>
-                            <div style={{ marginBottom: "24px" }}>
-                                <span style={{ color: COLORS.primary, fontSize: "12px", fontWeight: "bold", letterSpacing: "1.5px" }}>PROBLEM STATEMENT</span>
-                                <h1 style={{ fontSize: "2rem", marginTop: "8px", fontWeight: "700" }}>{problem.title}</h1>
-                            </div>
-                            <div style={{
-                                color: COLORS.textMuted,
-                                lineHeight: "1.8",
-                                fontSize: "1.05rem",
-                                whiteSpace: "pre-wrap",
-                                fontFamily: "'JetBrains Mono', monospace"
+
+                            {/* Title */}
+                            <h1 style={{
+                                fontSize: "2.2rem",
+                                marginBottom: "6px",
+                                fontWeight: "800",
+                                color: COLORS.primary
                             }}>
-                                {problem.statement}
+                                {problem.title}
+                            </h1>
+
+                            {/* Difficulty + Meta */}
+                            <div style={{
+                                display: "flex",
+                                gap: "18px",
+                                fontSize: "12px",
+                                color: COLORS.textMuted,
+                                marginBottom: "22px",
+                                flexWrap: "wrap"
+                            }}>
+                                <MetaTag label="DIFFICULTY" value={problem.difficulty} />
+                                <MetaTag label="INPUT SIZE" value={`${problem.test_case_input_length} chars`} />
+                                <MetaTag label="OUTPUT SIZE" value={`${problem.test_case_output_length} chars`} />
                             </div>
 
-                            {problem.input_format && (
-                                <>
-                                    <SectionTitle>INPUT FORMAT</SectionTitle>
-                                    <div style={psBlock}>{problem.input_format}</div>
-                                </>
-                            )}
+                            {/* Statement */}
+                            <SectionTitle>PROBLEM STATEMENT</SectionTitle>
+                            <p style={psText}>{problem.statement}</p>
 
-                            {problem.output_format && (
-                                <>
-                                    <SectionTitle>OUTPUT FORMAT</SectionTitle>
-                                    <div style={psBlock}>{problem.output_format}</div>
-                                </>
-                            )}
+                            {/* Input Format */}
+                            <SectionTitle>INPUT FORMAT</SectionTitle>
+                            <p style={psText}>{problem.input_format}</p>
 
-                            {problem.example_test_case_input && (
-                                <>
-                                    <SectionTitle>EXAMPLE INPUT</SectionTitle>
-                                    <CodeBlock>{problem.example_test_case_input}</CodeBlock>
-                                </>
-                            )}
+                            {/* Output Format */}
+                            <SectionTitle>OUTPUT FORMAT</SectionTitle>
+                            <p style={psText}>{problem.output_format}</p>
 
-                            {problem.example_test_case_output && (
-                                <>
-                                    <SectionTitle>EXAMPLE OUTPUT</SectionTitle>
-                                    <CodeBlock>{problem.example_test_case_output}</CodeBlock>
-                                </>
-                            )}
+                            {/* Example Input */}
+                            <SectionTitle>EXAMPLE INPUT</SectionTitle>
+                            <CodeBlock>{problem.example_test_case_input}</CodeBlock>
 
-
+                            {/* Example Output */}
+                            <SectionTitle>EXAMPLE OUTPUT</SectionTitle>
+                            <CodeBlock>{problem.example_test_case_output}</CodeBlock>
 
                         </div>
+
 
                         {/* RIGHT SIDE — Controls & Editor */}
                         <div style={{ width: "55%", display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -694,17 +716,34 @@ export default function ParticipantDashboard() {
 
                             <NeoButton
                                 onClick={handleSubmit}
-                                disabled={!isValid || remaining === 0}
+                                disabled={
+                                    isSubmitting ||
+                                    isAccepted ||
+                                    remaining === 0 ||
+                                    !isValid ||
+                                    team.submissions_used >= team.submissions_allowed
+                                }
                                 style={{
                                     height: "56px",
                                     fontSize: "16px",
-                                    background: isValid ? COLORS.primary : COLORS.border,
+                                    background: isAccepted
+                                        ? "#16a34a"
+                                        : isSubmitting
+                                            ? "#444"
+                                            : isValid
+                                                ? COLORS.primary
+                                                : COLORS.border,
                                     borderRadius: "12px",
                                     transition: "all 0.2s ease"
                                 }}
                             >
-                                SUBMIT SOLUTION
+                                {isAccepted
+                                    ? "✅ CODE ACCEPTED"
+                                    : isSubmitting
+                                        ? "⏳ JUDGING..."
+                                        : "SUBMIT SOLUTION"}
                             </NeoButton>
+
                         </div>
                     </div>
                 )}
@@ -803,3 +842,22 @@ const CodeBlock = ({ children }) => (
         {children}
     </div>
 );
+
+const MetaTag = ({ label, value }) => (
+    <div style={{
+        background: "#101014",
+        border: `1px solid ${COLORS.border}`,
+        padding: "6px 10px",
+        borderRadius: "6px",
+        fontSize: "11px"
+    }}>
+        <span style={{ color: COLORS.secondary }}>{label}:</span> {value}
+    </div>
+);
+
+const psText = {
+    color: COLORS.textMain,
+    lineHeight: "1.85",
+    fontSize: "1.05rem",
+    marginBottom: "10px"
+};
