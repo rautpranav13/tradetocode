@@ -177,7 +177,7 @@
 
 import { useEffect, useState } from "react";
 import useContestTimer from "../hooks/useContestTimer";
-import { databases, DATABASE_ID, COLLECTION_TEAMS } from "../lib/appwrite";
+import { databases, DATABASE_ID, COLLECTION_TEAMS, COLLECTION_PROBLEMS } from "../lib/appwrite";
 import CodeEditor from "../components/CodeEditor";
 import BackgroundWrapper from "../components/BackgroundWrapper";
 import NeoButton from "../components/NeoButton";
@@ -506,6 +506,37 @@ export default function ParticipantDashboard() {
                             }}>
                                 {problem.statement}
                             </div>
+
+                            {problem.input_format && (
+                                <>
+                                    <SectionTitle>INPUT FORMAT</SectionTitle>
+                                    <div style={psBlock}>{problem.input_format}</div>
+                                </>
+                            )}
+
+                            {problem.output_format && (
+                                <>
+                                    <SectionTitle>OUTPUT FORMAT</SectionTitle>
+                                    <div style={psBlock}>{problem.output_format}</div>
+                                </>
+                            )}
+
+                            {problem.example_test_case_input && (
+                                <>
+                                    <SectionTitle>EXAMPLE INPUT</SectionTitle>
+                                    <CodeBlock>{problem.example_test_case_input}</CodeBlock>
+                                </>
+                            )}
+
+                            {problem.example_test_case_output && (
+                                <>
+                                    <SectionTitle>EXAMPLE OUTPUT</SectionTitle>
+                                    <CodeBlock>{problem.example_test_case_output}</CodeBlock>
+                                </>
+                            )}
+
+
+
                         </div>
 
                         {/* RIGHT SIDE — Controls & Editor */}
@@ -685,3 +716,38 @@ const PurchasedBar = ({ team }) => {
         </div>
     );
 };
+
+const SectionTitle = ({ children }) => (
+    <h3 style={{
+        marginTop: "28px",
+        marginBottom: "8px",
+        fontSize: "13px",
+        color: COLORS.secondary,
+        letterSpacing: "1px"
+    }}>
+        {children}
+    </h3>
+);
+
+const psBlock = {
+    color: COLORS.textMuted,
+    lineHeight: "1.8",
+    fontSize: "1.05rem",
+    whiteSpace: "pre-wrap",
+    fontFamily: "'JetBrains Mono', monospace"
+};
+
+const CodeBlock = ({ children }) => (
+    <div style={{
+        background: "#0F0F11",
+        border: `1px solid ${COLORS.border}`,
+        padding: "12px",
+        borderRadius: "8px",
+        fontFamily: "monospace",
+        fontSize: "14px",
+        color: "#e4e4e7",
+        whiteSpace: "pre-wrap"
+    }}>
+        {children}
+    </div>
+);

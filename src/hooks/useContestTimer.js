@@ -14,13 +14,22 @@ export default function useContestTimer(team) {
 
         let state = JSON.parse(localStorage.getItem(STORAGE_KEY));
 
-        // 🟢 FIRST LOGIN OR NEW TEAM
-        if (!state || state.team_id !== team.team_id) {
-            const start = team.start_time || Date.now(); // fallback if DB not ready
+        // 🧠 Convert DB start_time safely
+        const dbStart = team.start_time
+            ? (team.start_time < 1e12
+                ? team.start_time * 1000   // seconds → ms
+                : team.start_time)         // already ms
+            : null;
 
+        // 🔁 INIT OR RESYNC
+        if (
+            !state ||
+            state.team_id !== team.team_id ||
+            (dbStart && Math.abs(state.startTime - dbStart) > 5000)
+        ) {
             state = {
                 team_id: team.team_id,
-                startTime: start,
+                startTime: dbStart || Date.now(),
                 usedExtra: 0,
                 speedUsed: 0
             };
@@ -49,7 +58,6 @@ export default function useContestTimer(team) {
 
     }, [team.team_id, team.base_time_sec, team.start_time]);
 
-    /* POWERUPS */
     const extendTime = () => {
         const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
         if (!s || s.usedExtra >= team.extra_time_sec) return;

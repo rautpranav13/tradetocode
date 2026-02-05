@@ -40,7 +40,6 @@ export default function CodeEditor({ team, language, onValidChange, onCodeChange
             }
         });
 
-
         setViolations(notAllowed);
         onValidChange(notAllowed.length === 0);
     };
