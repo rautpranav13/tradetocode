@@ -10,18 +10,21 @@ export default function useContestTimer(team) {
     });
 
     useEffect(() => {
-        if (!team.team_id || !team.start_time) return;
+        if (!team.team_id) return;
 
         let state = JSON.parse(localStorage.getItem(STORAGE_KEY));
 
-        // Sync with DB start_time
+        // 🟢 FIRST LOGIN OR NEW TEAM
         if (!state || state.team_id !== team.team_id) {
+            const start = team.start_time || Date.now(); // fallback if DB not ready
+
             state = {
                 team_id: team.team_id,
-                startTime: team.start_time,
+                startTime: start,
                 usedExtra: 0,
                 speedUsed: 0
             };
+
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         }
 
@@ -43,8 +46,10 @@ export default function useContestTimer(team) {
         tick();
         const interval = setInterval(tick, 1000);
         return () => clearInterval(interval);
+
     }, [team.team_id, team.base_time_sec, team.start_time]);
 
+    /* POWERUPS */
     const extendTime = () => {
         const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
         if (!s || s.usedExtra >= team.extra_time_sec) return;

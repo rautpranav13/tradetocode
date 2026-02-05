@@ -111,9 +111,9 @@ export default function AddTeam() {
                     time_taken_sec: null,
                     purchased_keywords: [],
                     purchased_extras: [],
-                    points_total: 100,
+                    points_total: 40,
                     points_used: 0,
-                    points_remaining: 100
+                    points_remaining: 40
                 }
             );
 
