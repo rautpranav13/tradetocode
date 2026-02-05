@@ -10,14 +10,15 @@ export default function useContestTimer(team) {
     });
 
     useEffect(() => {
-        if (!team.team_id) return;
+        if (!team.team_id || !team.start_time) return;
 
         let state = JSON.parse(localStorage.getItem(STORAGE_KEY));
 
+        // Sync with DB start_time
         if (!state || state.team_id !== team.team_id) {
             state = {
                 team_id: team.team_id,
-                startTime: Date.now(),
+                startTime: team.start_time,
                 usedExtra: 0,
                 speedUsed: 0
             };
@@ -42,24 +43,18 @@ export default function useContestTimer(team) {
         tick();
         const interval = setInterval(tick, 1000);
         return () => clearInterval(interval);
-    }, [team.team_id, team.base_time_sec]);
+    }, [team.team_id, team.base_time_sec, team.start_time]);
 
     const extendTime = () => {
         const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (!s) return;
-
-        if (s.usedExtra >= team.extra_time_sec) return;
-
+        if (!s || s.usedExtra >= team.extra_time_sec) return;
         s.usedExtra += 300;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
     };
 
     const applySpeedBoost = () => {
         const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (!s) return;
-
-        if (s.speedUsed >= team.speed_boost_count) return;
-
+        if (!s || s.speedUsed >= team.speed_boost_count) return;
         s.speedUsed += 1;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
     };

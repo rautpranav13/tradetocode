@@ -105,8 +105,7 @@ export default function AddTeam() {
                     start_time: null,
                     base_time_sec: 1800,
                     extra_time_sec: 0,
-                    pause_remaining_sec: 0,
-                    submissions_allowed: 1,
+                    submissions_allowed: 2,
                     submissions_used: 0,
                     solved: false,
                     time_taken_sec: null,
@@ -144,9 +143,9 @@ export default function AddTeam() {
             }}>
                 {/* Background Detail */}
                 <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-                    <Particles 
-                        particleColors={[COLORS.accent, "#111"]} 
-                        speed={0.05} 
+                    <Particles
+                        particleColors={[COLORS.accent, "#111"]}
+                        speed={0.05}
                         particleCount={100}
                     />
                 </div>
@@ -163,47 +162,47 @@ export default function AddTeam() {
                 }}>
                     {/* Admin Header */}
                     <div style={{ marginBottom: "40px" }}>
-                        <div style={{ 
-                            fontFamily: "monospace", 
-                            color: COLORS.accent, 
-                            fontSize: "11px", 
+                        <div style={{
+                            fontFamily: "monospace",
+                            color: COLORS.accent,
+                            fontSize: "11px",
                             letterSpacing: "4px",
                             marginBottom: "10px"
                         }}>
                             ADMIN_CORE_ACCESS
                         </div>
-                        <h2 style={{ 
-                            fontSize: "2rem", 
-                            margin: 0, 
-                            fontWeight: "900", 
-                            letterSpacing: "-1px" 
+                        <h2 style={{
+                            fontSize: "2rem",
+                            margin: 0,
+                            fontWeight: "900",
+                            letterSpacing: "-1px"
                         }}>
                             REGISTER_UNIT<span style={{ color: COLORS.accent }}>_</span>
                         </h2>
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
-                        <AdminInput 
-                            label="TEAM_ID" 
-                            type="number" 
-                            placeholder="e.g. 01" 
-                            value={teamId} 
-                            onChange={setTeamId} 
+                        <AdminInput
+                            label="TEAM_ID"
+                            type="number"
+                            placeholder="e.g. 01"
+                            value={teamId}
+                            onChange={setTeamId}
                         />
-                        <AdminInput 
-                            label="TEAM_NAME" 
-                            placeholder="" 
-                            value={teamName} 
-                            onChange={setTeamName} 
+                        <AdminInput
+                            label="TEAM_NAME"
+                            placeholder=""
+                            value={teamName}
+                            onChange={setTeamName}
                         />
-                        <AdminInput 
-                            label="PROBLEM_ID" 
-                            placeholder="" 
-                            value={problemId} 
-                            onChange={setProblemId} 
+                        <AdminInput
+                            label="PROBLEM_ID"
+                            placeholder=""
+                            value={problemId}
+                            onChange={setProblemId}
                         />
 
-                        <button 
+                        <button
                             onClick={createTeam}
                             onMouseEnter={() => setIsHovered(true)}
                             onMouseLeave={() => setIsHovered(false)}
@@ -226,7 +225,7 @@ export default function AddTeam() {
                         </button>
                     </div>
                 </div>
-                
+
                 {/* Side Label */}
                 <div style={{
                     position: "absolute",
@@ -250,9 +249,9 @@ function AdminInput({ label, type = "text", placeholder, value, onChange }) {
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <label style={{ 
-                fontFamily: "monospace", 
-                fontSize: "10px", 
+            <label style={{
+                fontFamily: "monospace",
+                fontSize: "10px",
                 color: focused ? COLORS.accent : COLORS.muted,
                 letterSpacing: "1px",
                 transition: "color 0.3s ease"

@@ -239,7 +239,25 @@ export default function ParticipantDashboard() {
             localStorage.setItem("problemData", JSON.stringify(freshProblem));
         };
 
+        const initStart = async () => {
+            if (!team.team_id || team.started) return;
+
+            await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTION_TEAMS,
+                String(team.team_id),
+                {
+                    started: true,
+                    start_time: Date.now()
+                }
+            );
+
+            setTeam(prev => ({ ...prev, started: true, start_time: Date.now() }));
+        };
+
+
         fetchProblem();
+        initStart();
     }, [team.problem_id]);
 
     const { remaining, usedExtra, speedUsed, extendTime, applySpeedBoost, formatTime } = useContestTimer(team);
@@ -347,23 +365,38 @@ export default function ParticipantDashboard() {
             );
 
             // Judge comparison
+            // Judge comparison FIRST
             if (userOutput === expectedOutput) {
                 alert("✅ Accepted\n\nOutput:\n" + userOutput);
+
+                const timerState = JSON.parse(localStorage.getItem("contest_timer_state")) || {};
+                const rawTimeTaken = Math.floor((Date.now() - (timerState.startTime || Date.now())) / 1000);
+                const speedReduction = (timerState.speedUsed || 0) * 60;
+                const finalTimeTaken = Math.max(rawTimeTaken - speedReduction, 0);
+
+                await databases.updateDocument(
+                    DATABASE_ID,
+                    COLLECTION_TEAMS,
+                    String(team.team_id),
+                    {
+                        solved: true,
+                        time_taken_sec: finalTimeTaken
+                    }
+                );
+
             } else {
                 alert(
-                    "❌ Wrong Answer\n\nYour Output:\n" +
-                    userOutput +
-                    "\n\nExpected Output:\n" +
-                    expectedOutput
+                    "❌ Wrong Answer\n\nYour Output:" +
+                    userOutput
                 );
             }
 
-            // Update submission count
+
             const updated = { submissions_used: team.submissions_used + 1 };
             await databases.updateDocument(DATABASE_ID, COLLECTION_TEAMS, String(team.team_id), updated);
-            const newTeam = { ...team, ...updated };
-            setTeam(newTeam);
-            localStorage.setItem("teamData", JSON.stringify(newTeam));
+            setTeam(prev => ({ ...prev, ...updated }));
+            localStorage.setItem("teamData", JSON.stringify({ ...team, ...updated }));
+
 
         } catch (err) {
             console.error("💥 Submission error:", err);

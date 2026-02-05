@@ -217,6 +217,8 @@ export default function UpdateTeam() {
         const speedBoostCount = teamDoc.purchased_extras.filter(e => e === "speed_boost").length;
         const problemSwapCount = teamDoc.purchased_extras.filter(e => e === "problem_swap").length;
 
+
+
         await databases.updateDocument(
             DATABASE_ID,
             COLLECTION_TEAMS,
@@ -232,7 +234,10 @@ export default function UpdateTeam() {
                 extra_time_sec: timeWarpCount * 300,
                 submissions_allowed: 2 + secondChanceCount,
                 speed_boost_count: speedBoostCount,
-                problem_swap_count: problemSwapCount
+                problem_swap_count: problemSwapCount,
+                submissions_used: teamDoc.submissions_used || 0,
+                //solved: teamDoc.solved || false,
+                time_taken_sec: teamDoc.time_taken_sec || null,
             }
         );
 
